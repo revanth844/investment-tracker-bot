@@ -24,6 +24,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from netlify_deploy import build_html, deploy
 from price_fetcher import fetch_prices  # 3-source waterfall fetcher
+from gmail_parser import pull_axis_recommendations  # auto-pull from Axis Direct emails
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -220,6 +221,24 @@ def build_caption(recs_data, detail_url):
 # ── Core update job ───────────────────────────────────────────────────────────
 async def run_update(bot: Bot):
     log.info("=== Daily update starting ===")
+
+    # ── Step 0: Pull new Axis Direct recommendations from Gmail ───────────────
+    try:
+        new_recs = pull_axis_recommendations(DATA_FILE, lookback_days=7)
+        if new_recs:
+            names = ", ".join(r["label"] for r in new_recs)
+            await bot.send_message(
+                chat_id=CHAT_ID,
+                text=(
+                    f"📧 <b>Auto-imported from Axis Direct email</b>\n"
+                    f"Added: <code>{names}</code>\n"
+                    f"These will appear in today's chart update."
+                ),
+                parse_mode="HTML",
+            )
+    except Exception as e:
+        log.error(f"Gmail pull failed: {e}")
+
     recs = load_recs()
     news = load_news()
     now  = datetime.now().strftime("%d %b %Y %H:%M IST")
