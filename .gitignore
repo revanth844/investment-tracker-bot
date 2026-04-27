@@ -1,0 +1,5 @@
+# Environment files containing passwords and other sensitive information
+env
+
+# MAC system files
+.DS_Store

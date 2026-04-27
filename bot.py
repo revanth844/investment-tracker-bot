@@ -1,24 +1,20 @@
 """
-Investment Advisor Tracker Bot — v3
-Fixes:
-  - Rate limiting: longer backoff (15s, 30s, 60s), rotating User-Agents,
-    random jitter, 30s sleep between each symbol fetch
-  - Telegram /add command to add new recommendations without editing code
-  - Telegram /list command to see all tracked stocks
-  - /remove command to stop tracking a stock
+Investment Advisor Tracker Bot — v4
+Changes:
+  - 3-source price waterfall: NSE Bhavcopy → openchart → Yahoo Finance
+    (eliminates rate-limiting as primary failure mode)
+  - Telegram /add /remove /list /news /update commands
 """
 
-import os, json, asyncio, logging, time, random, re
+import os, json, asyncio, logging, re
 from datetime import datetime, date
 from pathlib import Path
 from io import BytesIO
 
-import yfinance as yf
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import requests as req_lib
 from telegram import Bot, Update
 from telegram.constants import ParseMode
 from telegram.ext import (
@@ -27,6 +23,7 @@ from telegram.ext import (
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from netlify_deploy import build_html, deploy
+from price_fetcher import fetch_prices  # 3-source waterfall fetcher
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -82,57 +79,7 @@ def save_news(news):
     NEWS_FILE.write_text(json.dumps(news, indent=2))
 
 
-# ── Rate-limit-aware price fetching ──────────────────────────────────────────
-# Rotate user agents to reduce fingerprinting
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0",
-]
-
-# Backoff: wait 15s, 30s, 60s between retries (not 2s, 4s — that's too fast for Yahoo)
-RETRY_WAITS = [15, 30, 60]
-
-def fetch_prices(symbol: str, start: str, retries: int = 3):
-    """
-    Fetch daily closes from Yahoo Finance with rate-limit-aware retries.
-    Returns (dates: list[date], closes: list[float]) or ([], []) on failure.
-    """
-    start_dt = datetime.strptime(start, "%Y-%m-%d").date()
-
-    for attempt in range(retries):
-        wait = RETRY_WAITS[attempt] + random.uniform(0, 5)
-        if attempt > 0:
-            log.info(f"[{symbol}] waiting {wait:.0f}s before attempt {attempt+1}...")
-            time.sleep(wait)
-        try:
-            session = req_lib.Session()
-            session.headers.update({"User-Agent": random.choice(USER_AGENTS)})
-
-            tk = yf.Ticker(symbol, session=session)
-            df = tk.history(start=start, interval="1d", auto_adjust=True, timeout=20)
-
-            if df is None or df.empty:
-                log.warning(f"[{symbol}] attempt {attempt+1}: empty response")
-                continue
-
-            df.index = df.index.tz_localize(None)
-            dates  = [d.date() for d in df.index if d.date() >= start_dt]
-            closes = [float(df.loc[df.index.date == d, "Close"].iloc[0]) for d in dates]
-
-            if not dates:
-                log.warning(f"[{symbol}] attempt {attempt+1}: no rows after {start}")
-                continue
-
-            log.info(f"[{symbol}] OK — {len(dates)} days ({dates[0]} to {dates[-1]})")
-            return dates, closes
-
-        except Exception as e:
-            log.error(f"[{symbol}] attempt {attempt+1} failed: {e}")
-
-    log.error(f"[{symbol}] all {retries} attempts failed")
-    return [], []
+# ── Price fetching delegated to price_fetcher.py (3-source waterfall) ──────
 
 def rebase(prices):
     if not prices or prices[0] == 0:
@@ -281,12 +228,10 @@ async def run_update(bot: Bot):
     # Fetch indices first, then pause before stocks
     log.info("Fetching index data...")
     nifty_dates,  nifty_closes  = fetch_prices("^NSEI",  earliest)
-    await asyncio.sleep(30)  # wait 30s between index fetches
     sensex_dates, sensex_closes = fetch_prices("^BSESN", earliest)
 
     recs_data = []
     for i, rec in enumerate(recs):
-        await asyncio.sleep(30)  # 30s gap between every symbol — key fix for rate limiting
         log.info(f"Fetching {rec['symbol']} ({i+1}/{len(recs)})...")
         s_dates, s_closes = fetch_prices(rec["symbol"], rec["buy_date"])
 
