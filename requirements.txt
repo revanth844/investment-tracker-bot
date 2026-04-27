@@ -1,0 +1,5 @@
+yfinance==0.2.54
+matplotlib==3.9.4
+numpy==1.26.4
+python-telegram-bot==21.6
+APScheduler==3.10.4
