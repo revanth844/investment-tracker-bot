@@ -195,24 +195,25 @@ def make_chart(recs_data: list, news_events: list) -> BytesIO:
 # ── Caption ───────────────────────────────────────────────────────────────────
 def build_caption(recs_data, detail_url):
     today = datetime.now().strftime("%d %b %Y, %I:%M %p")
-    lines = [f"*Portfolio Summary — {today} IST*\n"]
+    # Use HTML parse mode — reliable for links in photo captions
+    lines = [f"<b>Portfolio Summary — {today} IST</b>\n"]
     for rd in recs_data:
         s_p = pct(rd["stock_rb"]); n_p = pct(rd["nifty_rb"]); x_p = pct(rd["sensex_rb"])
         al = round(s_p - n_p, 2)
         days = (date.today() - datetime.strptime(rd["buy_date"], "%Y-%m-%d").date()).days
         em = "🟢" if s_p >= 0 else "🔴"
         if not rd["stock_rb"]:
-            lines.append(f"⚠️ *{rd['label']}* — rate limited, retry tomorrow\n"); continue
+            lines.append(f"⚠️ <b>{rd['label']}</b> — rate limited, retry tomorrow\n"); continue
         lines.append(
-            f"{em} *{rd['label']}* ({rd['type']} · {days}d)\n"
-            f"   Stock `{sign(s_p)}{s_p}%`  Nifty `{sign(n_p)}{n_p}%`  Sensex `{sign(x_p)}{x_p}%`\n"
-            f"   Alpha vs Nifty: `{sign(al)}{al}%`"
+            f"{em} <b>{rd['label']}</b> ({rd['type']} · {days}d)\n"
+            f"   Stock <code>{sign(s_p)}{s_p}%</code>  Nifty <code>{sign(n_p)}{n_p}%</code>  Sensex <code>{sign(x_p)}{x_p}%</code>\n"
+            f"   Alpha vs Nifty: <code>{sign(al)}{al}%</code>"
         )
         if rd.get("target"):
             up = round((rd["target"]/rd["buy_low"]-1)*100, 1)
             lines.append(f"   Target ₹{rd['target']}  ({sign(up)}{up}% upside)")
         lines.append("")
-    lines.append(f"[📊 Full charts & news]({detail_url})")
+    lines.append(f'<a href="{detail_url}">📊 Full charts &amp; news</a>')
     return "\n".join(lines)
 
 
@@ -262,7 +263,7 @@ async def run_update(bot: Bot):
 
     await bot.send_photo(
         chat_id=CHAT_ID, photo=chart_buf,
-        caption=caption, parse_mode=ParseMode.MARKDOWN,
+        caption=caption, parse_mode=ParseMode.HTML,
     )
     log.info("=== Update sent ✓ ===")
 
