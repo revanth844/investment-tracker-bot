@@ -40,10 +40,12 @@ BHAVCOPY_INDEX_SYMBOLS = {
     "^BSESN": None,           # Sensex is BSE — not in NSE Bhavcopy, use openchart
 }
 
+# openchart v0.2.0 segment/symbol map
+# segment: IDX for indices, EQ for equities
 OPENCHART_SYMBOL_MAP = {
     # Yahoo symbol  → (openchart_symbol,  segment)
-    "^NSEI":        ("NIFTY",             "NSE"),   # Nifty 50 index
-    "^BSESN":       ("SENSEX",            "BSE"),   # Sensex index
+    "^NSEI":        ("NIFTY 50",          "IDX"),   # Nifty 50 index
+    "^BSESN":       ("SENSEX",            "IDX"),   # Sensex (BSE index, also available via openchart)
 }
 
 def _strip_suffix(symbol: str) -> str:
@@ -51,11 +53,11 @@ def _strip_suffix(symbol: str) -> str:
     return symbol.replace(".NS", "").replace(".BO", "").replace(".BSE", "")
 
 def _to_openchart_symbol(yahoo_symbol: str) -> tuple[str, str]:
-    """Map Yahoo symbol to (openchart_symbol, exchange)."""
+    """Map Yahoo symbol to (openchart_symbol, segment) for openchart v0.2.0"""
     if yahoo_symbol in OPENCHART_SYMBOL_MAP:
         return OPENCHART_SYMBOL_MAP[yahoo_symbol]
     bare = _strip_suffix(yahoo_symbol)
-    return f"{bare}-EQ", "NSE"
+    return f"{bare}-EQ", "EQ"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -192,7 +194,7 @@ def fetch_openchart(yahoo_symbol: str, start: str) -> tuple[list, list]:
         return [], []
 
     start_dt = datetime.strptime(start, "%Y-%m-%d").date()
-    oc_sym, exchange = _to_openchart_symbol(yahoo_symbol)
+    oc_sym, segment = _to_openchart_symbol(yahoo_symbol)
 
     try:
         nse = NSEData()
@@ -200,7 +202,7 @@ def fetch_openchart(yahoo_symbol: str, start: str) -> tuple[list, list]:
 
         df = nse.historical(
             symbol    = oc_sym,
-            exchange  = exchange,
+            exchange  = segment,
             start     = datetime.combine(start_dt, datetime.min.time()),
             end       = datetime.combine(date.today(), datetime.min.time()),
             timeframe = "1d",
