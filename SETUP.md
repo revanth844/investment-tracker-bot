@@ -8,6 +8,7 @@ recommendations, rebased from buy date vs Nifty 50 & Sensex.
 ## What you'll get every morning
 
 A Telegram message with:
+
 - **One image** — 4 stacked charts (one per stock), each showing:
   - Stock line vs Nifty 50 (dashed green) vs Sensex (dotted orange)
   - Buy-date vertical line with entry price
@@ -42,17 +43,21 @@ investment-bot/
 3. Choose a name: e.g. `My Portfolio Tracker`
 4. Choose a username: e.g. `myportfolio_tracker_bot`
 5. BotFather replies with a **token** like:
+
    ```
    7412356789:AAFxyz_abcdefghijklmnopqrstuvwxyz123
    ```
+
    → Save this as `TELEGRAM_TOKEN`
 
 6. **Get your Chat ID:**
    - Start a chat with your new bot (click the link BotFather gives you → Start)
    - Open this URL in your browser (replace TOKEN):
+
      ```
      https://api.telegram.org/bot<TOKEN>/getUpdates
      ```
+
    - Send any message to your bot, refresh the URL
    - Look for `"chat":{"id":123456789}` — that number is your `CHAT_ID`
 
@@ -85,7 +90,7 @@ git push -u origin main
 3. Select your `investment-bot` repo
 4. Railway will detect Python and start building
 
-### Set environment variables (Railway Dashboard → your project → Variables):
+### Set environment variables (Railway Dashboard → your project → Variables)
 
 | Variable         | Value                                      |
 |------------------|--------------------------------------------|
@@ -96,12 +101,14 @@ git push -u origin main
 
 5. Click **Deploy** — Railway will install requirements and start the bot
 6. Check **Logs** tab — you should see:
+
    ```
    Bot starting — will send at 8:00 Asia/Kolkata daily
    Running daily update job…
    Chart saved → charts/daily_summary.png
    Message sent ✓
    ```
+
 7. Check your Telegram — the bot sends once immediately on startup ✅
 
 ---
@@ -170,6 +177,7 @@ to your terminal. Use this to verify any new stock or news before deploying.
 ## Schedule customisation
 
 Change `SEND_HOUR` env variable to any hour (IST, 24h format):
+
 - `8` → 8:00 AM IST
 - `15` → 3:00 PM IST (after market close — recommended for accurate data)
 - `18` → 6:00 PM IST
