@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Tracker — 28 Apr 2026 17:30 IST</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f8f7f4;
+        color: #2c2c2a;
+        padding: 16px;
+      }
+      .header {
+        max-width: 900px;
+        margin: 0 auto 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .updated {
+        font-size: 12px;
+        color: #888;
+      }
+      .cards {
+        max-width: 900px;
+        margin: 0 auto 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e8e6e0;
+        border-radius: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: border-color 0.15s;
+      }
+      .card:hover,
+      .card.active {
+        border-color: #378add;
+      }
+      .card.active {
+        background: #eef5fd;
+      }
+      .sym {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .card.active .sym {
+        color: #378add;
+      }
+      .meta {
+        font-size: 11px;
+        color: #888;
+        margin-top: 2px;
+      }
+      .price {
+        font-size: 11px;
+        color: #555;
+        margin-top: 3px;
+      }
+      .target {
+        font-size: 11px;
+        color: #1d9e75;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #f0eee8;
+        color: #666;
+        margin-top: 4px;
+      }
+      .perf {
+        max-width: 900px;
+        margin: 0 auto 12px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .badge {
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid #e8e6e0;
+      }
+      .badge.pos {
+        background: #eaf3de;
+        color: #3b6d11;
+        border-color: #c5dfa5;
+      }
+      .badge.neg {
+        background: #fcebeb;
+        color: #a32d2d;
+        border-color: #f0b8b8;
+      }
+      .badge.neu {
+        background: #f0eee8;
+        color: #666;
+      }
+      .chart-box {
+        max-width: 900px;
+        margin: 0 auto 16px;
+        background: #fff;
+        border: 1px solid #e8e6e0;
+        border-radius: 10px;
+        padding: 16px;
+      }
+      .chart-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .li {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: #666;
+      }
+      .lline {
+        width: 18px;
+        height: 2px;
+        border-radius: 1px;
+      }
+      .ldot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .period-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .pbtn {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 5px;
+        border: 1px solid #e8e6e0;
+        background: transparent;
+        cursor: pointer;
+      }
+      .pbtn.active {
+        background: #f0eee8;
+        font-weight: 600;
+      }
+      canvas {
+        width: 100% !important;
+      }
+      .news-box {
+        max-width: 900px;
+        margin: 0 auto 16px;
+        background: #fff;
+        border: 1px solid #e8e6e0;
+        border-radius: 10px;
+        padding: 14px 16px;
+      }
+      .news-box h3 {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .nitem {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 8px;
+        border-radius: 6px;
+        background: #f8f7f4;
+        margin-bottom: 6px;
+      }
+      .ndate {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 3px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .ntext {
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .nsym {
+        font-size: 10px;
+        color: #888;
+        margin-top: 2px;
+      }
+      .footer {
+        max-width: 900px;
+        margin: 20px auto 0;
+        font-size: 11px;
+        color: #aaa;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div>
+        <h1>📈 Portfolio Tracker</h1>
+        <div style="font-size: 12px; color: #888; margin-top: 2px">
+          Advisor: +91 877 990 0557
+        </div>
+      </div>
+      <div class="updated">Updated: 28 Apr 2026 17:30 IST</div>
+    </div>
+
+    <div class="cards" id="cards"></div>
+    <div class="perf" id="perf"></div>
+
+    <div class="chart-box">
+      <div class="chart-title" id="ctitle">Select a stock</div>
+      <div class="legend">
+        <div class="li">
+          <div class="lline" style="background: #378add"></div>
+          Stock (rebased)
+        </div>
+        <div class="li">
+          <div
+            class="lline"
+            style="
+              background: #1d9e75;
+              border-top: 2px dashed #1d9e75;
+              height: 0;
+            "
+          ></div>
+          Nifty 50
+        </div>
+        <div class="li">
+          <div
+            class="lline"
+            style="
+              background: #d85a30;
+              border-top: 2px dashed #d85a30;
+              height: 0;
+            "
+          ></div>
+          Sensex
+        </div>
+        <div class="li">
+          <div class="ldot" style="background: #d4537e"></div>
+          News
+        </div>
+        <div class="li">
+          <div
+            style="
+              width: 2px;
+              height: 14px;
+              background: #f0997b;
+              border-radius: 1px;
+            "
+          ></div>
+          Buy date
+        </div>
+      </div>
+      <div class="period-row" id="pbtns">
+        <button class="pbtn active" data-days="14">14D</button>
+        <button class="pbtn" data-days="30">30D</button>
+        <button class="pbtn" data-days="60">60D</button>
+        <button class="pbtn" data-days="9999">All</button>
+      </div>
+      <div style="position: relative; height: 300px">
+        <canvas id="chart"></canvas>
+      </div>
+      <div
+        id="fetchnote"
+        style="
+          font-size: 11px;
+          color: #aaa;
+          margin-top: 6px;
+          font-style: italic;
+        "
+      ></div>
+    </div>
+
+    <div class="news-box">
+      <h3>News events</h3>
+      <div id="newslist"></div>
+    </div>
+
+    <div class="footer">
+      Data sourced via Yahoo Finance · Simulated prices shown (live data fetched
+      by bot at 28 Apr 2026 17:30 IST)
+    </div>
+
+    <script>
+      const RECS = [
+        {
+          label: "TITAN",
+          name: "Titan Company",
+          buy_date: "2026-03-13",
+          buy_low: 4133.0,
+          buy_high: 4134.0,
+          type: "Positional",
+          target: null,
+          symbol: "TITAN.NS",
+          dates: [
+            "2026-03-13",
+            "2026-03-16",
+            "2026-03-17",
+            "2026-03-18",
+            "2026-03-19",
+            "2026-03-20",
+            "2026-03-23",
+            "2026-03-24",
+            "2026-03-25",
+            "2026-03-27",
+            "2026-03-30",
+            "2026-04-01",
+            "2026-04-02",
+            "2026-04-06",
+            "2026-04-07",
+            "2026-04-08",
+            "2026-04-09",
+            "2026-04-10",
+            "2026-04-13",
+            "2026-04-15",
+            "2026-04-16",
+            "2026-04-17",
+            "2026-04-20",
+            "2026-04-21",
+            "2026-04-22",
+            "2026-04-23",
+            "2026-04-24",
+            "2026-04-27",
+            "2026-04-28",
+          ],
+          stock_rb: [
+            100.0, 100.43, 100.42, 101.78, 99.13, 100.82, 94.6, 95.74, 99.17,
+            97.75, 97.01, 99.81, 100.59, 104.24, 103.86, 110.29, 109.0, 110.6,
+            108.99, 111.02, 109.53, 111.11, 110.8, 109.98, 109.36, 109.41,
+            108.27, 109.05, 108.44,
+          ],
+          nifty_rb: [
+            100.0, 101.11, 101.86, 102.71, 99.36, 99.84, 97.24, 98.97, 100.67,
+            98.57, 96.46, 97.96, 98.11, 99.21, 99.88, 103.66, 102.7, 103.89,
+            102.99, 104.67, 104.52, 105.19, 105.24, 106.16, 105.3, 104.41,
+            103.23, 104.07, 103.65,
+          ],
+          sensex_rb: [],
+          stock_closes: [
+            4073.2, 4090.8, 4090.5, 4145.5, 4037.9, 4106.6, 3853.1, 3899.5,
+            4039.3, 3981.5, 3951.4, 4065.5, 4097.2, 4246.1, 4230.6, 4492.5,
+            4439.8, 4505.0, 4439.3, 4522.2, 4461.4, 4525.9, 4513.0, 4479.7,
+            4454.6, 4456.5, 4410.0, 4441.8, 4417.0,
+          ],
+          nifty_closes: [
+            23151.1, 23408.8, 23581.15, 23777.8, 23002.15, 23114.5, 22512.65,
+            22912.4, 23306.45, 22819.6, 22331.4, 22679.4, 22713.1, 22968.25,
+            23123.65, 23997.35, 23775.1, 24050.6, 23842.65, 24231.3, 24196.75,
+            24353.55, 24364.85, 24576.6, 24378.1, 24173.05, 23897.95, 24092.7,
+            23995.7,
+          ],
+          sensex_closes: [],
+        },
+        {
+          label: "HAPPSTMNDS",
+          name: "Happiest Minds",
+          buy_date: "2026-04-16",
+          buy_low: 383.5,
+          buy_high: 385.0,
+          type: "Medium Term",
+          target: 600.0,
+          symbol: "HAPPSTMNDS.NS",
+          dates: [
+            "2026-04-16",
+            "2026-04-17",
+            "2026-04-20",
+            "2026-04-21",
+            "2026-04-22",
+            "2026-04-23",
+            "2026-04-24",
+            "2026-04-27",
+            "2026-04-28",
+          ],
+          stock_rb: [
+            100.0, 100.05, 99.15, 98.97, 98.82, 98.0, 94.62, 98.48, 97.14,
+          ],
+          nifty_rb: [
+            100.0, 100.65, 100.69, 101.57, 100.75, 99.9, 98.77, 99.57, 99.17,
+          ],
+          sensex_rb: [],
+          stock_closes: [
+            381.7, 381.9, 378.45, 377.75, 377.2, 374.05, 361.15, 375.9, 370.8,
+          ],
+          nifty_closes: [
+            24196.75, 24353.55, 24364.85, 24576.6, 24378.1, 24173.05, 23897.95,
+            24092.7, 23995.7,
+          ],
+          sensex_closes: [],
+        },
+        {
+          label: "HDFCPVTBAN",
+          name: "HDFC Pvt Bank ETF",
+          buy_date: "2026-04-22",
+          buy_low: 27.7,
+          buy_high: 27.8,
+          type: "Positional",
+          target: null,
+          symbol: "HDFCPVTBAN.NS",
+          dates: [
+            "2026-04-22",
+            "2026-04-23",
+            "2026-04-24",
+            "2026-04-27",
+            "2026-04-28",
+          ],
+          stock_rb: [100.0, 98.49, 97.66, 97.94, 97.48],
+          nifty_rb: [100.0, 99.16, 98.03, 98.83, 98.43],
+          sensex_rb: [],
+          stock_closes: [27.73, 27.31, 27.08, 27.16, 27.03],
+          nifty_closes: [24378.1, 24173.05, 23897.95, 24092.7, 23995.7],
+          sensex_closes: [],
+        },
+        {
+          label: "RELIANCE",
+          name: "Reliance Industries",
+          buy_date: "2026-04-23",
+          buy_low: 1353.0,
+          buy_high: 1354.0,
+          type: "Positional",
+          target: null,
+          symbol: "RELIANCE.NS",
+          dates: ["2026-04-23", "2026-04-24", "2026-04-27", "2026-04-28"],
+          stock_rb: [100.0, 98.84, 101.67, 103.39],
+          nifty_rb: [100.0, 98.86, 99.67, 99.27],
+          sensex_rb: [],
+          stock_closes: [1343.4, 1327.8, 1365.8, 1388.9],
+          nifty_closes: [24173.05, 23897.95, 24092.7, 23995.7],
+          sensex_closes: [],
+        },
+        {
+          label: "NMDC",
+          name: "NMDC",
+          buy_date: "2026-04-27",
+          buy_low: 90.87,
+          buy_high: 90.87,
+          type: "ShortTrerm",
+          target: 94.0,
+          symbol: "NMDC",
+          dates: ["2026-04-27", "2026-04-28"],
+          stock_rb: [100.0, 100.53],
+          nifty_rb: [100.0, 99.6],
+          sensex_rb: [],
+          stock_closes: [90.42, 90.9],
+          nifty_closes: [24092.7, 23995.7],
+          sensex_closes: [],
+        },
+      ];
+      const NEWS = [
+        {
+          date: "2026-03-15",
+          symbol: "TITAN",
+          text: "Q3 jewellery revenue beats estimates",
+          impact: "pos",
+        },
+        {
+          date: "2026-03-28",
+          symbol: "TITAN",
+          text: "Gold prices hit record high",
+          impact: "neu",
+        },
+        {
+          date: "2026-04-10",
+          symbol: "TITAN",
+          text: "Fastrack launch; analyst upgrades to Buy",
+          impact: "pos",
+        },
+        {
+          date: "2026-04-17",
+          symbol: "HAPPSTMNDS",
+          text: "Mixed IT sector Q4 outlook",
+          impact: "neu",
+        },
+        {
+          date: "2026-04-22",
+          symbol: "ALL",
+          text: "Markets rally on RBI rate cut expectations",
+          impact: "pos",
+        },
+        {
+          date: "2026-04-23",
+          symbol: "RELIANCE",
+          text: "AGM announced; JioMart expansion",
+          impact: "pos",
+        },
+        {
+          date: "2026-04-24",
+          symbol: "HDFCPVTBAN",
+          text: "HDFC Bank Q4: NIM pressure, AQ improves",
+          impact: "neu",
+        },
+      ];
+
+      let sel = 0,
+        period = 14,
+        chart = null;
+      const sign = (v) => (v >= 0 ? "+" : "");
+      const cls = (v) => (Math.abs(v) < 0.5 ? "neu" : v > 0 ? "pos" : "neg");
+
+      // ── Rebase utility ─────────────────────────────────────────────────────────
+      function rebase(prices) {
+        if (!prices || !prices.length) return [];
+        const b = prices[0];
+        return prices.map((p) => +((p / b) * 100).toFixed(2));
+      }
+
+      function pct(rb) {
+        return rb && rb.length ? +(rb[rb.length - 1] - 100).toFixed(2) : 0;
+      }
+
+      // ── Render cards ──────────────────────────────────────────────────────────
+      function renderCards() {
+        document.getElementById("cards").innerHTML = RECS.map(
+          (r, i) => `
+    <div class="card ${i === sel ? "active" : ""}" onclick="pick(${i})">
+      <div class="sym">${r.label}</div>
+      <div class="meta">Rec: ${r.buy_date}</div>
+      <div class="price">Buy ₹${r.buy_low}–${r.buy_high}</div>
+      ${r.target ? `<div class="target">Target ₹${r.target}</div>` : ""}
+      <div class="tag">${r.type}</div>
+    </div>`,
+        ).join("");
+      }
+
+      // ── Render performance badges ─────────────────────────────────────────────
+      function renderPerf(rb_s, rb_n, rb_x, rec) {
+        const sp = pct(rb_s),
+          np = pct(rb_n),
+          xp = pct(rb_x),
+          al = +(sp - np).toFixed(2);
+        document.getElementById("perf").innerHTML = `
+    <div class="badge ${cls(sp)}">${rec.label}: ${sign(sp)}${sp}%</div>
+    <div class="badge ${cls(np)}">Nifty 50: ${sign(np)}${np}%</div>
+    <div class="badge ${cls(xp)}">Sensex: ${sign(xp)}${xp}%</div>
+    <div class="badge ${cls(al)}">Alpha vs Nifty: ${sign(al)}${al}%</div>`;
+      }
+
+      // ── Build chart ───────────────────────────────────────────────────────────
+      function buildChart(rec) {
+        if (chart) {
+          chart.destroy();
+          chart = null;
+        }
+        const ctx = document.getElementById("chart");
+        const buyDt = new Date(rec.buy_date);
+        const today = new Date();
+        const maxDays = Math.min(
+          period,
+          Math.round((today - buyDt) / 86400000),
+        );
+
+        // Build date labels from buy_date
+        const labels = [];
+        for (let i = 0; i <= maxDays; i++) {
+          const d = new Date(buyDt);
+          d.setDate(d.getDate() + i);
+          labels.push(
+            d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+          );
+        }
+
+        // Use live prices from recs_data if present, else simulate
+        const stockPrices =
+          rec.stock_closes && rec.stock_closes.length
+            ? rec.stock_closes.slice(0, maxDays + 1)
+            : simulate(
+                rec.buy_low,
+                maxDays,
+                0.14,
+                0.22,
+                rec.label.charCodeAt(0),
+              );
+
+        const niftyPrices =
+          rec.nifty_closes && rec.nifty_closes.length
+            ? rec.nifty_closes.slice(0, maxDays + 1)
+            : simulate(100, maxDays, 0.1, 0.13, 42);
+
+        const sensexPrices =
+          rec.sensex_closes && rec.sensex_closes.length
+            ? rec.sensex_closes.slice(0, maxDays + 1)
+            : simulate(100, maxDays, 0.09, 0.12, 99);
+
+        const rb_s = rebase(stockPrices);
+        const rb_n = rebase(niftyPrices);
+        const rb_x = rebase(sensexPrices);
+
+        renderPerf(rb_s, rb_n, rb_x, rec);
+
+        const buyDays = ((today - buyDt) / 86400000) | 0;
+        document.getElementById("ctitle").textContent =
+          `${rec.name} (${rec.label}) · ${buyDays}d since recommendation`;
+        document.getElementById("fetchnote").textContent =
+          rec.stock_closes && rec.stock_closes.length
+            ? `Live prices fetched at ${"28 Apr 2026 17:30 IST"}`
+            : `Simulated prices — live data loaded by bot at ${"28 Apr 2026 17:30 IST"}`;
+
+        // News annotations
+        const newsForStock = NEWS.filter(
+          (n) => n.symbol === "ALL" || n.symbol === rec.label,
+        );
+        const newsPlugin = {
+          id: "newsMarkers",
+          afterDraw(ch) {
+            const meta = ch.getDatasetMeta(0);
+            if (!meta || !meta.data) return;
+            newsForStock.forEach((n) => {
+              const nDate = new Date(n.date);
+              const idx = Math.round((nDate - buyDt) / 86400000);
+              if (idx < 0 || idx >= meta.data.length) return;
+              const pt = meta.data[idx];
+              const c = ch.ctx;
+              c.save();
+              c.beginPath();
+              c.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+              c.fillStyle =
+                n.impact === "pos"
+                  ? "#3B6D11"
+                  : n.impact === "neg"
+                    ? "#A32D2D"
+                    : "#888";
+              c.fill();
+              c.strokeStyle = "#fff";
+              c.lineWidth = 1.5;
+              c.stroke();
+              c.restore();
+            });
+          },
+        };
+
+        const buyLinePlugin = {
+          id: "buyLine",
+          afterDraw(ch) {
+            const {
+              ctx,
+              chartArea: { top, bottom },
+              scales: { x },
+            } = ch;
+            const xp = x.getPixelForValue(0);
+            ctx.save();
+            ctx.setLineDash([4, 3]);
+            ctx.strokeStyle = "#F0997B";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(xp, top);
+            ctx.lineTo(xp, bottom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            const lbl = `Buy ₹${rec.buy_low}`;
+            ctx.font = "bold 10px sans-serif";
+            const tw = ctx.measureText(lbl).width;
+            ctx.fillStyle = "#F0997B";
+            ctx.beginPath();
+            ctx.roundRect(xp + 4, top + 6, tw + 10, 18, 3);
+            ctx.fill();
+            ctx.fillStyle = "#fff";
+            ctx.textBaseline = "middle";
+            ctx.fillText(lbl, xp + 9, top + 15);
+            ctx.restore();
+          },
+        };
+
+        chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: rec.label,
+                data: rb_s,
+                borderColor: "#378ADD",
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: false,
+              },
+              {
+                label: "Nifty 50",
+                data: rb_n,
+                borderColor: "#1D9E75",
+                borderWidth: 1.3,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: false,
+                borderDash: [5, 3],
+              },
+              {
+                label: "Sensex",
+                data: rb_x,
+                borderColor: "#D85A30",
+                borderWidth: 1.3,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: false,
+                borderDash: [3, 3],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (c) => `${c.dataset.label}: ${(+c.raw).toFixed(1)}%`,
+                },
+              },
+            },
+            scales: {
+              x: {
+                ticks: { font: { size: 10 }, maxTicksLimit: 10, color: "#888" },
+                grid: { color: "rgba(0,0,0,0.04)" },
+              },
+              y: {
+                ticks: {
+                  font: { size: 10 },
+                  color: "#888",
+                  callback: (v) => v.toFixed(0) + "%",
+                },
+                grid: { color: "rgba(0,0,0,0.04)" },
+                title: {
+                  display: true,
+                  text: "Rebased (100 = buy date)",
+                  font: { size: 10 },
+                  color: "#aaa",
+                },
+              },
+            },
+          },
+          plugins: [buyLinePlugin, newsPlugin],
+        });
+      }
+
+      // ── Simulate prices (fallback when live data absent) ──────────────────────
+      function simulate(start, days, drift, vol, seed) {
+        let s = seed * 9301 + 49297;
+        const rand = () => {
+          s = (s * 9301 + 49297) % 233280;
+          return s / 233280;
+        };
+        const prices = [start];
+        for (let i = 0; i < days; i++) {
+          const prev = prices[prices.length - 1];
+          prices.push(
+            Math.max(
+              prev * 0.8,
+              prev *
+                (1 + drift / 252 + vol * (rand() - 0.48) * Math.sqrt(1 / 252)),
+            ),
+          );
+        }
+        return prices;
+      }
+
+      // ── News list ─────────────────────────────────────────────────────────────
+      function renderNews() {
+        const rec = RECS[sel];
+        const relevant = NEWS.filter(
+          (n) => n.symbol === "ALL" || n.symbol === rec.label,
+        ).sort((a, b) => a.date.localeCompare(b.date));
+        const bgmap = {
+          pos: ["#eaf3de", "#3b6d11"],
+          neg: ["#fcebeb", "#a32d2d"],
+          neu: ["#f0eee8", "#555"],
+        };
+        document.getElementById("newslist").innerHTML =
+          relevant
+            .map((n) => {
+              const [bg, fg] = bgmap[n.impact] || bgmap.neu;
+              return `<div class="nitem">
+      <div class="ndate" style="background:${bg};color:${fg}">${n.date}</div>
+      <div><div class="ntext">${n.text}</div>
+           <div class="nsym">${n.symbol === "ALL" ? "All stocks" : n.symbol}</div></div>
+    </div>`;
+            })
+            .join("") ||
+          '<div style="font-size:12px;color:#aaa">No news for this stock.</div>';
+      }
+
+      // ── Interaction ───────────────────────────────────────────────────────────
+      function pick(i) {
+        sel = i;
+        renderCards();
+        buildChart(RECS[i]);
+        renderNews();
+      }
+
+      document.getElementById("pbtns").addEventListener("click", (e) => {
+        if (!e.target.dataset.days) return;
+        period = +e.target.dataset.days;
+        document
+          .querySelectorAll(".pbtn")
+          .forEach((b) => b.classList.remove("active"));
+        e.target.classList.add("active");
+        buildChart(RECS[sel]);
+      });
+
+      // ── Init ──────────────────────────────────────────────────────────────────
+      renderCards();
+      pick(0);
+    </script>
+  </body>
+</html>
+
+Chat with the

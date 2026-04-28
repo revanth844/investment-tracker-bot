@@ -102,12 +102,12 @@ git push -u origin main
 5. Click **Deploy** — Railway will install requirements and start the bot
 6. Check **Logs** tab — you should see:
 
-   ```
-   Bot starting — will send at 8:00 Asia/Kolkata daily
-   Running daily update job…
-   Chart saved → charts/daily_summary.png
-   Message sent ✓
-   ```
+  ```
+  Bot starting — will send at 8:00 Asia/Kolkata daily
+  Running daily update job…
+  Chart saved → charts/daily_summary.png
+  Message sent ✓
+  ```
 
 7. Check your Telegram — the bot sends once immediately on startup ✅
 
