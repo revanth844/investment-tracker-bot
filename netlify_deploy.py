@@ -264,9 +264,20 @@ def deploy(html: str) -> str:
     if not token or not site_id:
         raise RuntimeError("NETLIFY_TOKEN or NETLIFY_SITE_ID not set")
 
+    # _headers tells Netlify to serve index.html as text/html
+    # Without this, the ZIP deploy API defaults to text/plain
+    headers_file = """/index.html
+  Content-Type: text/html; charset=UTF-8
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*
+  Content-Type: text/html; charset=UTF-8
+"""
+
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("index.html", html.encode("utf-8"))
+        zf.writestr("_headers",   headers_file.encode("utf-8"))
     buf.seek(0)
 
     resp = req.post(
