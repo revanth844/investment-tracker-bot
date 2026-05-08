@@ -65,7 +65,7 @@ In Railway → your project → Variables, add:
 
 Then push the updated code:
 ```bash
-git add bot.py netlify_deploy.py requirements.txt
+git add src/ requirements.txt
 git commit -m "feat: netlify auto-deploy"
 git push
 ```

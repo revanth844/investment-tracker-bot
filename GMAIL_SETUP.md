@@ -75,7 +75,7 @@ print(f"\nGMAIL_REFRESH_TOKEN = {creds.refresh_token}")
 Install dependency first:
 ```bash
 pip install google-auth-oauthlib
-python get_token.py
+python src/get_gmail_refresh_token.py
 ```
 
 A browser window opens → sign in with your Gmail → Allow → copy the printed token.
@@ -109,7 +109,7 @@ Every morning before the chart update:
 | Problem | Fix |
 |---|---|
 | `Missing OAuth credentials` in logs | Check all 3 env vars are set in Railway |
-| `Token refresh failed 401` | Refresh token expired — re-run get_token.py |
+| `Token refresh failed 401` | Refresh token expired — re-run `src/get_gmail_refresh_token.py` |
 | `Could not parse company name` | Email format changed — check Railway logs, use `/add` manually |
 | `Could not resolve NSE symbol` | Yahoo search returned nothing — use `/add SYMBOL.NS Name Date...` |
 | Bot adds wrong symbol | Use `/remove WRONGSYMBOL` then `/add CORRECT.NS Name Date...` |

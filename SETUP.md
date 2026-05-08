@@ -23,21 +23,24 @@ A Telegram message with:
 
 ## Files in this project
 
-```
+```text
 investment-bot/
-├── bot.py                  ← main bot (scheduler + chart + Telegram commands)
-├── price_fetcher.py        ← 3-source price waterfall: NSE Bhavcopy → openchart → yfinance
-├── netlify_deploy.py       ← builds interactive HTML and deploys to Netlify
-├── hedge_analyzer.py       ← Claude API: auto-generates hedging suggestions on /add
-├── gmail_parser.py         ← auto-imports Axis Direct email recommendations (optional)
-├── dryrun.py               ← offline test, no API keys needed
+├── src/
+│   ├── bot.py                     ← main bot (scheduler + chart + Telegram commands)
+│   ├── price_fetcher.py           ← 3-source price waterfall: NSE Bhavcopy → openchart → yfinance
+│   ├── netlify_deploy.py          ← builds interactive HTML and deploys to Netlify
+│   ├── hedge_analyzer.py          ← Claude API: auto-generates hedging suggestions on /add
+│   ├── gmail_parser.py            ← auto-imports Axis Direct email recommendations (optional)
+│   ├── dryrun.py                  ← offline test, no API keys needed
+│   ├── get_gmail_refresh_token.py ← one-time OAuth token helper (run locally)
+│   └── test_deploy.py             ← Netlify deploy smoke test
 ├── requirements.txt
-├── Procfile                ← Railway process definition
-├── railway.toml            ← Railway config
+├── Procfile                       ← Railway process definition
+├── railway.toml                   ← Railway config
 ├── data/
-│   ├── recommendations.json   ← auto-created on first run
-│   └── news_events.json       ← auto-created on first run
-└── charts/                 ← temp chart images (auto-created)
+│   ├── recommendations.json       ← auto-created on first run
+│   └── news_events.json           ← auto-created on first run
+└── charts/                        ← temp chart images (auto-created)
 ```
 
 ---
@@ -50,7 +53,7 @@ investment-bot/
 4. Choose a username: e.g. `myportfolio_tracker_bot`
 5. BotFather replies with a **token** like:
 
-   ```
+   ```text
    7412356789:AAFxyz_abcdefghijklmnopqrstuvwxyz123
    ```
 
@@ -60,7 +63,7 @@ investment-bot/
    - Start a chat with your new bot (click the link BotFather gives you → Start)
    - Open this URL in your browser (replace TOKEN):
 
-     ```
+     ```text
      https://api.telegram.org/bot<TOKEN>/getUpdates
      ```
 
@@ -122,17 +125,17 @@ git push -u origin main
 
 ### Set environment variables (Railway Dashboard → your project → Variables)
 
-| Variable               | Value                                                              |
-| ---------------------- | ------------------------------------------------------------------ |
-| `TELEGRAM_TOKEN`       | `7412356789:AAFxyz_abc...` (from Step 1) — **required**           |
-| `CHAT_ID`              | `123456789` (from Step 1) — **required**                          |
-| `NETLIFY_TOKEN`        | Personal access token (from Step 2) — **required**                |
-| `NETLIFY_SITE_ID`      | Site ID from Netlify (from Step 2) — **required**                 |
-| `ANTHROPIC_API_KEY`    | `sk-ant-...` (from Step 3) — optional, enables hedge analysis     |
-| `SEND_HOUR`            | `15` — optional, default `15` (3 PM IST, after market close)      |
-| `GMAIL_CLIENT_ID`      | OAuth2 credential — see `GMAIL_SETUP.md` (optional)               |
-| `GMAIL_CLIENT_SECRET`  | OAuth2 credential — see `GMAIL_SETUP.md` (optional)               |
-| `GMAIL_REFRESH_TOKEN`  | OAuth2 credential — see `GMAIL_SETUP.md` (optional)               |
+| Variable | Value |
+| --- | --- |
+| `TELEGRAM_TOKEN` | `7412356789:AAFxyz_abc...` (from Step 1) — **required** |
+| `CHAT_ID` | `123456789` (from Step 1) — **required** |
+| `NETLIFY_TOKEN` | Personal access token (from Step 2) — **required** |
+| `NETLIFY_SITE_ID` | Site ID from Netlify (from Step 2) — **required** |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` (from Step 3) — optional, enables hedge analysis |
+| `SEND_HOUR` | `15` — optional, default `15` (3 PM IST, after market close) |
+| `GMAIL_CLIENT_ID` | OAuth2 credential — see `GMAIL_SETUP.md` (optional) |
+| `GMAIL_CLIENT_SECRET` | OAuth2 credential — see `GMAIL_SETUP.md` (optional) |
+| `GMAIL_REFRESH_TOKEN` | OAuth2 credential — see `GMAIL_SETUP.md` (optional) |
 
 5. Click **Deploy** — Railway will install requirements and start the bot
 6. Check the **Logs** tab — you should see the bot send an update on startup
@@ -144,7 +147,7 @@ git push -u origin main
 
 Just message your bot directly — no code editing needed:
 
-```
+```bash
 /add INFY.NS Infosys 2026-05-01 1820 1825 Positional
 /add TCS.NS TCS 2026-05-02 3950 3960 MediumTerm 5000 Axis Direct
 /add SBIN.NS "State Bank" 2026-05-03 830 832 Positional - Self Research
@@ -185,7 +188,7 @@ hedging analysis from Claude as a follow-up message.
 
 ## Add news events
 
-```
+```bash
 /news INFY 2026-05-03 pos Q4 results beat estimates
 /news ALL 2026-05-05 neu RBI policy: rates held
 ```
@@ -206,7 +209,7 @@ Hedge suggestions are sent automatically in two situations:
 
 You can also request analysis on-demand at any time:
 
-```
+```bash
 /hedge TITAN
 /hedge RELIANCE
 ```
@@ -219,10 +222,10 @@ strategies with specific strikes, expiries, and approximate premiums.
 ## Dry run (offline test, no Telegram needed)
 
 ```bash
-python dryrun.py
+python src/dryrun.py
 ```
 
-Generates `output.html` and prints the full Telegram caption to your terminal.
+Generates `charts/dryrun_summary.png` and prints the full Telegram caption to your terminal.
 Use this to verify any new stock or news before deploying.
 
 ---
@@ -243,7 +246,7 @@ Change `SEND_HOUR` env variable to any hour (IST, 24h format):
 ## Troubleshooting
 
 | Problem | Fix |
-|---------|-----|
+| --- | --- |
 | Chart is blank / no data | Check Railway logs for price fetch errors; NSE data can lag 1 day |
 | `CHAT_ID` error | Send at least one message to the bot before checking getUpdates |
 | Railway build fails | Check `requirements.txt`; Railway uses Python 3.11 by default |
@@ -257,7 +260,7 @@ Change `SEND_HOUR` env variable to any hour (IST, 24h format):
 ## Cost
 
 | Service | Cost |
-|---------|------|
+| --- | --- |
 | Telegram Bot API | Free |
 | Railway (Starter) | Free — 500 hrs/month (enough for 1 worker) |
 | Netlify (Starter) | Free — 100 GB bandwidth/month |
@@ -271,7 +274,7 @@ Change `SEND_HOUR` env variable to any hour (IST, 24h format):
 ## Full command reference
 
 | Command | What it does |
-|---------|--------------|
+| --- | --- |
 | `/list` | Show all tracked stocks with source and target |
 | `/add SYMBOL NAME DATE LOW HIGH TYPE [TARGET] [SOURCE]` | Add a recommendation; triggers hedge analysis |
 | `/remove SYMBOL` | Stop tracking a stock |

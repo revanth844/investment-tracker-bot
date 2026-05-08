@@ -190,7 +190,7 @@ for ax, rd in zip(axes, recs_data):
     leg.get_frame().set_linewidth(0.5)
 
 plt.tight_layout(rect=[0, 0, 0.94, 0.99], h_pad=2.5)
-out = Path("/home/claude/investment-bot/charts/dryrun_summary.png")
+out = Path("charts/dryrun_summary.png")
 out.parent.mkdir(exist_ok=True)
 fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=C["bg"])
 plt.close(fig)

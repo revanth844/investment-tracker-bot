@@ -42,7 +42,7 @@ failed) renders what's available rather than showing nothing.
 
 ```bash
 # In your investment-bot folder:
-git add bot.py requirements.txt
+git add src/bot.py requirements.txt
 git commit -m "fix: user-agent, retries, date alignment"
 git push
 ```
@@ -64,7 +64,7 @@ verify it on https://finance.yahoo.com/quote/TITAN.NS
 Railway free tier pauses workers after inactivity. Add a no-op HTTP
 health-check endpoint so UptimeRobot can ping it every 5 min:
 
-Add to bot.py (optional):
+Add to `src/bot.py` (optional):
 ```python
 from aiohttp import web
 async def health(request):
