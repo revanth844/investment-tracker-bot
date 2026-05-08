@@ -25,6 +25,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from netlify_deploy import build_html, deploy
 from price_fetcher import fetch_prices  # 3-source waterfall fetcher
 from gmail_parser import pull_axis_recommendations  # auto-pull from Axis Direct emails
+from hedge_analyzer import analyze_hedge
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -220,6 +221,19 @@ def build_caption(recs_data, detail_url):
     return "\n".join(lines)
 
 
+# ── Hedge analysis helper ─────────────────────────────────────────────────────
+async def send_hedge_analysis(bot: Bot, rec: dict):
+    """Fetch latest price for rec and send Claude-generated hedge suggestions."""
+    try:
+        dates, closes = fetch_prices(rec["symbol"], rec["buy_date"])
+        current_price = closes[-1] if closes else None
+        text = await analyze_hedge(rec, current_price)
+        if text:
+            await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="HTML")
+    except Exception as e:
+        log.error(f"[hedge] send_hedge_analysis failed for {rec.get('label')}: {e}")
+
+
 # ── Core update job ───────────────────────────────────────────────────────────
 async def run_update(bot: Bot):
     log.info("=== Daily update starting ===")
@@ -238,6 +252,8 @@ async def run_update(bot: Bot):
                 ),
                 parse_mode="HTML",
             )
+            for rec in new_recs:
+                await send_hedge_analysis(bot, rec)
     except Exception as e:
         log.error(f"Gmail pull failed: {e}")
 
@@ -299,6 +315,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "/list — show all tracked stocks\n"
         "/add — add a new recommendation\n"
         "/remove SYMBOL — stop tracking a stock\n"
+        "/hedge SYMBOL — get hedging suggestions for a stock\n"
         "/news — add a news event\n"
         "/update — trigger an immediate update\n",
         parse_mode=ParseMode.MARKDOWN
@@ -401,12 +418,14 @@ async def cmd_add(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     tgt_str = f"  Target: ₹{target}" if target else ""
     src_str = f"  Source: {source}" if source else ""
+    new_rec = recs[-1]
     await update.message.reply_text(
         f"✅ *{label}* added\n"
         f"Buy ₹{buy_low}–{buy_high} on {buy_date}{tgt_str}{src_str}\n"
-        f"Will appear in tomorrow's update. Use /update to refresh now.",
+        f"Fetching hedge suggestions...",
         parse_mode=ParseMode.MARKDOWN
     )
+    await send_hedge_analysis(ctx.bot, new_rec)
 
 async def cmd_remove(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not ctx.args:
@@ -472,6 +491,23 @@ async def cmd_update(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Update failed: {e}")
 
+async def cmd_hedge(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """
+    /hedge SYMBOL  — on-demand hedge analysis for a tracked stock
+    Example: /hedge TITAN
+    """
+    if not ctx.args:
+        await update.message.reply_text("Usage: /hedge SYMBOL  e.g. /hedge TITAN")
+        return
+    label = ctx.args[0].upper().replace(".NS","").replace(".BO","")
+    recs = load_recs()
+    rec = next((r for r in recs if r["label"] == label), None)
+    if not rec:
+        await update.message.reply_text(f"❌ {label} not found. Use /list to see tracked stocks.")
+        return
+    await update.message.reply_text(f"🔍 Fetching price and generating hedge analysis for {label}...")
+    await send_hedge_analysis(ctx.bot, rec)
+
 
 # ── Scheduler job wrapper ─────────────────────────────────────────────────────
 async def scheduled_update(bot: Bot):
@@ -493,6 +529,7 @@ async def main():
     app.add_handler(CommandHandler("remove", cmd_remove))
     app.add_handler(CommandHandler("news",   cmd_news))
     app.add_handler(CommandHandler("update", cmd_update))
+    app.add_handler(CommandHandler("hedge",  cmd_hedge))
 
     scheduler = AsyncIOScheduler(timezone=TIMEZONE)
     scheduler.add_job(
