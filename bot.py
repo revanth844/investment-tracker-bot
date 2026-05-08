@@ -41,10 +41,10 @@ DATA_FILE = Path("data/recommendations.json")
 NEWS_FILE = Path("data/news_events.json")
 
 DEFAULT_RECS = [
-    {"symbol":"TITAN.NS",      "label":"TITAN",      "name":"Titan Company",      "buy_date":"2026-03-13","buy_low":4133.0,"buy_high":4134.0,"target":None, "type":"Positional"},
-    {"symbol":"HAPPSTMNDS.NS", "label":"HAPPSTMNDS", "name":"Happiest Minds",      "buy_date":"2026-04-16","buy_low":383.5, "buy_high":385.0, "target":600.0,"type":"Medium Term"},
-    {"symbol":"HDFCPVTBAN.NS", "label":"HDFCPVTBAN", "name":"HDFC Pvt Bank ETF",  "buy_date":"2026-04-22","buy_low":27.7,  "buy_high":27.8,  "target":None, "type":"Positional"},
-    {"symbol":"RELIANCE.NS",   "label":"RELIANCE",   "name":"Reliance Industries", "buy_date":"2026-04-23","buy_low":1353.0,"buy_high":1354.0,"target":None, "type":"Positional"},
+    {"symbol":"TITAN.NS",      "label":"TITAN",      "name":"Titan Company",      "buy_date":"2026-03-13","buy_low":4133.0,"buy_high":4134.0,"target":None, "type":"Positional",  "source":"RDhoot"},
+    {"symbol":"HAPPSTMNDS.NS", "label":"HAPPSTMNDS", "name":"Happiest Minds",      "buy_date":"2026-04-16","buy_low":383.5, "buy_high":385.0, "target":600.0,"type":"Medium Term","source":"RDhoot"},
+    {"symbol":"HDFCPVTBAN.NS", "label":"HDFCPVTBAN", "name":"HDFC Pvt Bank ETF",  "buy_date":"2026-04-22","buy_low":27.7,  "buy_high":27.8,  "target":None, "type":"Positional",  "source":"RDhoot"},
+    {"symbol":"RELIANCE.NS",   "label":"RELIANCE",   "name":"Reliance Industries", "buy_date":"2026-04-23","buy_low":1353.0,"buy_high":1354.0,"target":None, "type":"Positional",  "source":"RDhoot"},
 ]
 
 DEFAULT_NEWS = [
@@ -203,10 +203,12 @@ def build_caption(recs_data, detail_url):
         al = round(s_p - n_p, 2)
         days = (date.today() - datetime.strptime(rd["buy_date"], "%Y-%m-%d").date()).days
         em = "🟢" if s_p >= 0 else "🔴"
+        src = rd.get("source") or ""
+        src_str = f" · {src}" if src else ""
         if not rd["stock_rb"]:
             lines.append(f"⚠️ <b>{rd['label']}</b> — rate limited, retry tomorrow\n"); continue
         lines.append(
-            f"{em} <b>{rd['label']}</b> ({rd['type']} · {days}d)\n"
+            f"{em} <b>{rd['label']}</b> ({rd['type']} · {days}d{src_str})\n"
             f"   Stock <code>{sign(s_p)}{s_p}%</code>  Nifty <code>{sign(n_p)}{n_p}%</code>  Sensex <code>{sign(x_p)}{x_p}%</code>\n"
             f"   Alpha vs Nifty: <code>{sign(al)}{al}%</code>"
         )
@@ -262,6 +264,7 @@ async def run_update(bot: Bot):
             label=rec["label"], name=rec["name"], buy_date=rec["buy_date"],
             buy_low=rec["buy_low"], buy_high=rec["buy_high"],
             type=rec["type"], target=rec.get("target"), symbol=rec["symbol"],
+            source=rec.get("source"),
             dates=common if common else s_dates,
             stock_rb=rebase(s_al) if s_al else rebase(s_closes),
             nifty_rb=rebase(n_al), sensex_rb=rebase(x_al),
@@ -310,28 +313,32 @@ async def cmd_list(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     for r in recs:
         days = (date.today() - datetime.strptime(r["buy_date"], "%Y-%m-%d").date()).days
         tgt = f"  Target ₹{r['target']}" if r.get("target") else ""
-        lines.append(f"• *{r['label']}* — Buy ₹{r['buy_low']}–{r['buy_high']} on {r['buy_date']} ({days}d){tgt}")
+        src = f"  via {r['source']}" if r.get("source") else ""
+        lines.append(f"• *{r['label']}* — Buy ₹{r['buy_low']}–{r['buy_high']} on {r['buy_date']} ({days}d){tgt}{src}")
     await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
 
 async def cmd_add(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """
     Usage:
-      /add SYMBOL NAME BUY_DATE BUY_LOW BUY_HIGH TYPE [TARGET]
+      /add SYMBOL NAME BUY_DATE BUY_LOW BUY_HIGH TYPE [TARGET] [SOURCE...]
 
     Example:
       /add INFY.NS Infosys 2026-05-01 1820 1825 Positional
-      /add TCS.NS TCS 2026-05-01 3950 3960 MediumTerm 5000
+      /add TCS.NS TCS 2026-05-01 3950 3960 MediumTerm 5000 Axis Direct
+      /add TCS.NS TCS 2026-05-01 3950 3960 MediumTerm - Self Research
     """
     args = ctx.args
     if not args or len(args) < 6:
         await update.message.reply_text(
             "*Usage:*\n"
-            "`/add SYMBOL NAME DATE BUY\\_LOW BUY\\_HIGH TYPE [TARGET]`\n\n"
+            "`/add SYMBOL NAME DATE BUY\\_LOW BUY\\_HIGH TYPE [TARGET] [SOURCE]`\n\n"
             "*Example:*\n"
             "`/add INFY.NS Infosys 2026-05-01 1820 1825 Positional`\n"
-            "`/add TCS.NS TCS 2026-05-02 3950 3960 MediumTerm 5000`\n\n"
+            "`/add TCS.NS TCS 2026-05-02 3950 3960 MediumTerm 5000 Axis Direct`\n"
+            "`/add TCS.NS TCS 2026-05-02 3950 3960 MediumTerm \\- Self Research`\n\n"
             "SYMBOL must end in `.NS` for NSE stocks\\.\n"
-            "TYPE: `Positional` or `MediumTerm`",
+            "TYPE: `Positional` or `MediumTerm`\n"
+            "Use `\\-` as TARGET to skip it and still set SOURCE\\.",
             parse_mode=ParseMode.MARKDOWN_V2
         )
         return
@@ -343,10 +350,25 @@ async def cmd_add(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         buy_low  = float(args[3])
         buy_high = float(args[4])
         rec_type = args[5]
-        target   = float(args[6]) if len(args) > 6 else None
     except ValueError:
-        await update.message.reply_text("❌ BUY_LOW, BUY_HIGH and TARGET must be numbers.")
+        await update.message.reply_text("❌ BUY_LOW and BUY_HIGH must be numbers.")
         return
+
+    target = None
+    source = None
+    if len(args) > 6:
+        if args[6] == "-":
+            # dash means no target; remaining args are source
+            if len(args) > 7:
+                source = " ".join(args[7:])
+        else:
+            try:
+                target = float(args[6])
+                if len(args) > 7:
+                    source = " ".join(args[7:])
+            except ValueError:
+                await update.message.reply_text("❌ TARGET must be a number (or `-` to skip).")
+                return
 
     # Validate date
     try:
@@ -373,13 +395,15 @@ async def cmd_add(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "buy_high": buy_high,
         "target":   target,
         "type":     rec_type,
+        "source":   source,
     })
     save_recs(recs)
 
     tgt_str = f"  Target: ₹{target}" if target else ""
+    src_str = f"  Source: {source}" if source else ""
     await update.message.reply_text(
         f"✅ *{label}* added\n"
-        f"Buy ₹{buy_low}–{buy_high} on {buy_date}{tgt_str}\n"
+        f"Buy ₹{buy_low}–{buy_high} on {buy_date}{tgt_str}{src_str}\n"
         f"Will appear in tomorrow's update. Use /update to refresh now.",
         parse_mode=ParseMode.MARKDOWN
     )

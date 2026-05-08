@@ -92,6 +92,7 @@ function renderCards(){
       ${curr?`<div class="cv" style="color:${col}">${fmtR(curr)}</div>`:''}
       ${rb.length?`<div class="cpct" style="color:${col}">${fmtP(sp)} since rec</div>`:''}
       <div class="ctag">${r.type}</div>
+      ${r.source?`<div class="ctag" style="margin-left:2px">${r.source}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -124,7 +125,8 @@ function buildChart(rec){
 
   renderPerf(rb_s,rb_n,rb_x,rawS,rec);
   const days=Math.round((Date.now()-buyDt)/86400000);
-  document.getElementById('ctitle').textContent=`${rec.name} (${rec.label}) \u00b7 ${days}d since recommendation`;
+  const srcLabel=rec.source?` \u00b7 ${rec.source}`:'';
+  document.getElementById('ctitle').textContent=`${rec.name} (${rec.label}) \u00b7 ${days}d since recommendation${srcLabel}`;
   document.getElementById('note').textContent=rawS.length?`Live prices \u00b7 Updated ${TS}`:`Simulated prices \u00b7 ${TS}`;
 
   const newsFor=NEWS.filter(n=>n.symbol==='ALL'||n.symbol===rec.label);
